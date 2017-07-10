@@ -65,7 +65,7 @@ public class Main2Activity extends AppCompatActivity {
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.button1:
-                b1();
+                b2();
                 break;
             case R.id.button2:
                 break;
