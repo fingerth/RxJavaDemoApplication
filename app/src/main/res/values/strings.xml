@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">RxJavaDemoApplication</string>
+    <string name="package_name">com.able.rxjavademo</string>
+</resources>
