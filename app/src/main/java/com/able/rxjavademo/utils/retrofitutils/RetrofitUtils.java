@@ -2,13 +2,9 @@ package com.able.rxjavademo.utils.retrofitutils;
 
 import android.util.Log;
 
-import com.able.rxjavademo.utils.LogUtils;
-import com.able.rxjavademo.utils.retrofit.StringConverterFactory;
-
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Type;
-import java.util.HashMap;
 import java.util.Map;
 
 import io.reactivex.Observable;
@@ -34,12 +30,17 @@ import retrofit2.http.QueryMap;
  * ======================================================
  * Created by Administrator able_fingerth on 2017/12/4.
  * <p/>
- * compile 'io.reactivex.rxjava2:rxjava:2.1.3'
+ * compile 'io.reactivex.rxjava2:rxjava:2.1.7'
  * compile 'io.reactivex.rxjava2:rxandroid:2.0.1'
  * compile 'com.squareup.retrofit2:retrofit:2.3.0'
  * compile 'com.squareup.retrofit2:converter-gson:2.3.0'
  * compile 'com.squareup.retrofit2:adapter-rxjava2:2.3.0'
  * compile 'com.squareup.okhttp3:logging-interceptor:3.9.0'
+ *
+ * If you are using ProGuard you might need to add the following options:
+ * -dontwarn okio.**
+ * -dontwarn javax.annotation.**
+ *
  */
 public class RetrofitUtils {
     private final static String TAG = "RetrofitUtils";
