@@ -10,6 +10,7 @@ import android.widget.Toast;
 
 import com.able.rxjavademo.utils.LogUtils;
 import com.able.rxjavademo.utils.retrofit.StringConverterFactory;
+import com.able.rxjavademo.utils.retrofitutils.RetrofitUtils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,7 +66,47 @@ public class Main2Activity extends AppCompatActivity {
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.button1:
-                b2();
+                Map<String, String> map = new HashMap<>();
+                map.put("status", "1");
+                map.put("id", "235");
+                map.put("action", "check");
+                map.put("memberId", "1592");
+//                RetrofitUtils.getInstances().requestByGet(map);
+//               RetrofitUtils.getInstances().retrofit.create(BlogService.class).getBlog3(map).enqueue(new Callback<String>() {
+//                   @Override
+//                   public void onResponse(Call<String> call, Response<String> response) {
+//                       LogUtils.setTag("RetrofitUtils", "Retrofit2數據返回1：" + response.body());
+//                   }
+//
+//                   @Override
+//                   public void onFailure(Call<String> call, Throwable t) {
+//
+//                   }
+//               });
+                RetrofitUtils.getInstances().retrofit.create(BlogService.class).getBlog7(map)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Observer<String>() {
+                            @Override
+                            public void onSubscribe(Disposable d) {
+                                LogUtils.setLog(TAG, "Disposable  ");
+                            }
+
+                            @Override
+                            public void onNext(String value) {
+                                LogUtils.setLog(TAG, "TabTabMealBean value 2222222:  " + value.toString());
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                LogUtils.setLog(TAG, "Throwable e   ");
+                            }
+
+                            @Override
+                            public void onComplete() {
+                                LogUtils.setLog(TAG, "onComplete   ");
+                            }
+                        });
                 break;
             case R.id.button2:
                 break;
@@ -88,7 +129,6 @@ public class Main2Activity extends AppCompatActivity {
                 .build();
 
         BlogService service = retrofit.create(BlogService.class);
-
 
 
 //        Call<TabTabMealBean> call = service.getBlog21("1", 235, "check", "1592");
@@ -211,7 +251,7 @@ public class Main2Activity extends AppCompatActivity {
 
 
         @GET("api/order/cart.ashx")
-        Call<ResponseBody> getBlog3(@QueryMap Map<String, String> map);
+        Call<String> getBlog3(@QueryMap Map<String, String> map);
 //        @Path:路径参数
 //        @Query:?后面的参数，例如：?expand="dddddd"
 
@@ -230,6 +270,9 @@ public class Main2Activity extends AppCompatActivity {
         @FormUrlEncoded
         @POST("api/order/cart.ashx")
         Observable<TabTabMealBean> getBlog6(@FieldMap Map<String, String> map);
+
+        @GET("api/order/cart.ashx")
+        Observable<String> getBlog7(@QueryMap Map<String, String> map);
 
     }
 
