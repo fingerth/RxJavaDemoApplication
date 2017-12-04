@@ -2,15 +2,15 @@ package com.able.rxjavademo;
 
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Looper;
+import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
 import android.widget.ListView;
 
 import com.able.rxjavademo.adapter.ListViewAdapter;
-import com.able.rxjavademo.myutils.LocalSaveFileUtils;
 import com.able.rxjavademo.myutils.StaticUtils;
-import com.able.rxjavademo.myutils.ToastUtils;
 import com.able.rxjavademo.myutils.premission.PermissionUtils;
 import com.able.rxjavademo.utils.LogUtils;
 
@@ -35,6 +35,7 @@ import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
 import io.reactivex.ObservableSource;
 import io.reactivex.Observer;
+import io.reactivex.Scheduler;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.BiFunction;
@@ -63,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
 //    Schedulers.computation() 代表CPU计算密集型的操作, 例如需要大量计算的操作
 //    Schedulers.newThread() 代表一个常规的新线程
 //    AndroidSchedulers.mainThread() 代表Android的主线程
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -73,19 +73,21 @@ public class MainActivity extends AppCompatActivity {
         PermissionUtils.getPersimmions(this);
     }
 
-    @OnClick({R.id.button, R.id.button2,R.id.button3})
+    @OnClick({R.id.button, R.id.button2, R.id.button3})
     public void onViewClicked(View view) {
         switch (view.getId()) {
             case R.id.button:
+                doRxJavaDemoMothed2();
 //                doRxJava6();
-                doRxJavaDemoMothed();
+//                doRxJavaDemoMothed();
                 break;
             case R.id.button2:
-                ToastUtils.showToast(this, "555");
-                se.request(96);
+//                ToastUtils.showToast(this, "555");
+//                se.request(96);
                 break;
             case R.id.button3:
-                initSetAdapter();
+//                initSetAdapter();
+//                doRxJava2();
                 break;
         }
     }
@@ -108,6 +110,95 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void viewObservableFiles(File file, boolean isFirst) {
+        if (emitter != null) {
+            LogUtils.setLog("LocalSaveFileUtils", "Thread.currentThread().getName() : " + Thread.currentThread().getName() + " ; onNext(file) =======  " + pos++);
+            emitter.onNext(file);
+            File[] files = file.listFiles();
+            for (int i = 0; i < files.length; i++) {
+                LogUtils.setLog("LocalSaveFileUtils", "Thread.currentThread().getName() : " + Thread.currentThread().getName() + " ; onNext(file) =======  " + pos++);
+//                emitter.onNext(files[i]);
+                if (files[i].isDirectory()) {
+                    viewObservableFiles(files[i], false);
+                }
+            }
+            if (isFirst) {
+                emitter.onComplete();
+            }
+        }
+    }
+
+
+    private int pos = 1;
+    private int i = 1;
+
+    /**
+     * Observable來遍歷文件
+     */
+    private void doRxJavaDemoMothed2() {
+        //1.创建一个上游 Observable：
+        //2.创建一个下游 Observer
+        //3.建立连接
+
+        Observable
+                .create(new ObservableOnSubscribe<File>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<File> e) throws Exception {
+                        emitter = e;
+                        viewObservableFiles(Environment.getExternalStorageDirectory(), true);
+                    }
+                })
+                .flatMap(new Function<File, ObservableSource<File>>() {
+                    @Override
+                    public ObservableSource<File> apply(File file) throws Exception {
+                        return Observable.fromArray(file.listFiles());
+                    }
+                })
+                .filter(new Predicate<File>() {
+                    @Override
+                    public boolean test(File file) throws Exception {
+                        return file.getName().toLowerCase().endsWith(".jpg") || file.getName().toLowerCase().endsWith(".png");
+//                        return true;
+                    }
+                })
+                .map(new Function<File, String>() {
+                    @Override
+                    public String apply(File file) throws Exception {
+                        return file.getName();
+//                        String file_name = file.getName();
+//                        return file_name.substring(0, file_name.lastIndexOf("."));
+//                        return file.getAbsolutePath();
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+//                .observeOn(AndroidSchedulers.mainThread())
+//                .observeOn(Schedulers.newThread())
+                .subscribe(new Observer<String>() {
+                    @Override
+                    public void onSubscribe(Disposable d) {
+
+                    }
+
+                    @Override
+                    public void onNext(String s) {
+//                        SystemClock.sleep(200);
+                        LogUtils.setLog("LocalSaveFileUtils", "Thread.currentThread().getName() : " + Thread.currentThread().getName() + " ; onNext(String s) =======  " + i++ + "; 路徑: " + s);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+
+                    }
+
+                    @Override
+                    public void onComplete() {
+                        LogUtils.setLog("LocalSaveFileUtils", "完成了，onComplete();  i=" + i + "; pos= " + pos);
+                    }
+                });
+
+    }
+
+
     private void viewFlowableFiles(File file) {
         if (e != null) {
             boolean flag = false;
@@ -117,19 +208,17 @@ public class MainActivity extends AppCompatActivity {
                     flag = true;
                 }
             }
+            pos++;
             e.onNext(file);
             File[] files = file.listFiles();
             for (int i = 0; i < files.length; i++) {
-                LogUtils.setLog("LocalSaveFileUtils", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx == " + (i + 1));
+//                LogUtils.setLog("LocalSaveFileUtils", "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx == " + (i + 1));
                 if (files[i].isDirectory()) {
                     viewFlowableFiles(files[i]);
                 }
             }
         }
     }
-
-
-    private int i = 1;
 
     private void doRxJavaDemoMothed() {
         Flowable
@@ -156,7 +245,8 @@ public class MainActivity extends AppCompatActivity {
                 .map(new Function<File, String>() {
                     @Override
                     public String apply(File file) throws Exception {
-                        LogUtils.setLog("LocalSaveFileUtils", "圖片路徑 == " + i++ + " ;file.getAbsolutePath():" + file.getAbsolutePath());
+                        i++;
+//                        LogUtils.setLog("LocalSaveFileUtils", "圖片路徑 == " + i++ + " ;file.getAbsolutePath():" + file.getAbsolutePath());
                         return file.getAbsolutePath();
                     }
                 })
@@ -172,8 +262,9 @@ public class MainActivity extends AppCompatActivity {
 
                     @Override
                     public void onNext(String s) {
-                        listStr.add(s);
-                        LogUtils.setLog("LocalSaveFileUtils", "listStr.add(s); == " + listStr.size() + ";圖片路徑" + s);
+//                        listStr.add(s);
+//                        LogUtils.setLog("LocalSaveFileUtils", "listStr.add(s); == " + listStr.size() + ";圖片路徑" + s);
+                        LogUtils.setLog("LocalSaveFileUtils", "onNext(String s) ======= listStr.size() == " + i + "; pos==" + pos + "圖片路徑" + s);
                     }
 
                     @Override
@@ -432,10 +523,14 @@ public class MainActivity extends AppCompatActivity {
         Observable<Integer> observable = Observable.create(new ObservableOnSubscribe<Integer>() {
             @Override
             public void subscribe(ObservableEmitter<Integer> e) throws Exception {
-                e.onNext(1);
-                e.onNext(2);
-                e.onNext(3);
-                e.onComplete();
+//                e.onNext(1);
+//                e.onNext(2);
+//                e.onNext(3);
+//                e.onComplete();
+
+                for (int i = 0; ; i++) {
+                    e.onNext(i);
+                }
             }
         });
 
@@ -447,7 +542,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onNext(String value) {
-                Log.d(TAG, "" + value);
+                SystemClock.sleep(200);
+                Log.d(MainActivity.TAG, value);
             }
 
             @Override
@@ -468,6 +564,8 @@ public class MainActivity extends AppCompatActivity {
                         return "這是：第 " + integer + " 個。";
                     }
                 })
+                .subscribeOn(Schedulers.io())
+//                .observeOn(Schedulers.io())
                 .subscribe(observer);
 
     }
@@ -519,5 +617,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(observer);
     }
 
-
+    public static boolean isMainThread() {
+        return Looper.getMainLooper().getThread() == Thread.currentThread();
+    }
 }
